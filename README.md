@@ -6,6 +6,12 @@
 
 Workbench uses [`sclite`](https://my.fit.edu/~vkepuska/ece5527/sctk-2.3-rc1/doc/options.htm) command from [SCTK, the NIST Scoring Toolkit](https://github.com/usnistgov/SCTK). Clone the source, and building using the [instructions](https://github.com/usnistgov/SCTK#sctk-basic-installation) given in GitGub repo.
 
+Check that `sclite` is in your path:
+
+~~~ shell
+$ which sclite
+~~~
+
 ### Python Virtual Environment
 
 Python 3.6.5 or above is required.
@@ -18,7 +24,7 @@ $ source ./.venv/bin/activate
 $ pip install -r requirements.txt
 
 # For GPU machine
-$ pip install -r requirements.txt
+$ pip install -r requirements-gpu.txt
 ~~~
 
 ### Audio Test Data
@@ -61,7 +67,7 @@ $ cat data/en-US/audio/2830-3980-0043.txt
 
 ---
 
-## Run test bench
+## Run Test Bench
 
 To run WER bench for DeepSpeech:
 
