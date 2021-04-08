@@ -7,5 +7,6 @@ packaging
 scipy==1.4.1
 sentencepiece==0.1.94
 soundfile
+sox==1.4.1
 torch
 torchaudio==0.7.0

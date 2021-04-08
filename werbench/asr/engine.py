@@ -5,6 +5,7 @@ import itertools
 from pathlib import Path
 
 from werbench.asr.mozillads import MozillaDeepSpeech
+from werbench.asr.wav2letter import Wav2Letter
 
 
 def run_asr_engine(model, id_wav_txt):
@@ -13,6 +14,7 @@ def run_asr_engine(model, id_wav_txt):
     with open(txt_file, mode='r', encoding='utf-8') as f:
         ref = f.readline()  # read first line
 
+    print('Ref: {}'.format(ref))
     hyp = model.transcribe(wav_file)
 
     return (
@@ -50,7 +52,7 @@ def main():
     parser = argparse.ArgumentParser(description='ASR WER Bench')
     parser.add_argument(
         '--engine', required=True, type=str.lower,
-        choices=['deepspeech'],
+        choices=['deepspeech', 'wav2letter'],
         help='Name of the ASR engine'
     )
     parser.add_argument(
@@ -71,7 +73,8 @@ def main():
         'deepspeech': MozillaDeepSpeech(
             model_path=str(Path(args.model_path_prefix + '.pbmm').resolve()),
             scorer_path=str(Path(args.model_path_prefix + '.scorer').resolve()),
-        )
+        ),
+        'wav2letter': Wav2Letter(model_path=args.model_path_prefix),
     }[args.engine]
 
     data_set = args.input_dir
