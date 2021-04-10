@@ -152,6 +152,8 @@ $ python werbench/asr/engine.py --engine deepspeech \
 
 This will generate `./deepspeech-out.ref` and `./deepspeech-out.hyp` files.
 
+### Generate `sclite` Report
+
 To generate `sclite` report:
 
 ~~~ shell
@@ -162,6 +164,115 @@ To generate detailed `sclite` report:
 
 ~~~ shell
 $ sclite -r deepspeech-out.ref trn -h deepspeech-out.hyp trn -i rm -o dtl
+~~~
+
+---
+
+## Facebook Wav2Letter
+
+### Download Models
+
+You can down load pre-trained 2av2letter models from Facebook:
+
+~~~ shell
+$ mkdir -p $ASR_WER_BENCH_DIR/models/wav2letter/en-US
+$ cd $ASR_WER_BENCH_DIR/models/wav2letter/en-US
+
+$ wget https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/tokens.txt
+$ wget https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/lexicon.txt
+$ wget https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/lm_common_crawl_small_4gram_prun0-6-15_200kvocab.bin
+$ wget https://dl.fbaipublicfiles.com/wav2letter/rasr/tutorial/am_conformer_ctc_stride3_letters_25Mparams.bin
+
+$ cd $ASR_WER_BENCH_DIR
+~~~
+
+### Run Test Bench in the Docker
+
+The easiest way to run Wav2Letter is to run the docker images provided by
+[Facebook Flashlight](https://github.com/facebookresearch/flashlight/tree/master/.docker)
+project.
+
+To run inference on a CPU machine, get CPU docker image:
+
+~~~ shell
+$ docker pull flml/flashlight:cpu-latest
+~~~
+
+To run on GPU machine, you must use [nvidia-docker](https://github.com/NVIDIA/nvidia-docker):
+
+~~~ shell
+$ docker pull flashlight flml/flashlight:cuda-latest
+~~~
+
+Run the docker with asr-wer-bench mounted as a volume:
+
+~~~ shell
+$ docker run -v $ASR_WER_BENCH_DIR:/root/asr-wer-bench --rm -itd --name flashlight flml/flashlight:cpu-latest
+
+$ docker exec -it flashlight bash
+~~~
+
+This will get you in a shell in the docker Set the workbench dir inside the docker:
+
+~~~ shell
+$ export ASR_WER_BENCH_DIR=/root/asr-wer-bench
+~~~
+
+Install the requirements (TODO: Automate in augmented docker image):
+
+~~~ shell
+$ cd $ASR_WER_BENCH_DIR
+$ pip3 install -r requirements.txt
+~~~
+
+
+### Run Test Bench
+
+First select the language model and wav2letter model you want to use:
+
+~~~ shell
+$ cd $ASR_WER_BENCH_DIR/models/wav2letter/en-US
+
+$ ln -s lm_common_crawl_small_4gram_prun0-6-15_200kvocab.bin lm.bin
+$ ln -s am_conformer_ctc_stride3_letters_25Mparams.bin model.bin
+~~~
+
+Go back to the asr-wer-bench dir, and run the benchmark :
+
+~~~ shell
+$ cd $ASR_WER_BENCH_DIR
+
+$ PYTHONPATH=. python3 werbench/asr/engine.py --engine wav2letter \
+  --model-path-prefix <model dir> \
+  --input-dir <wav txt data dir> \
+  --output-path-prefix <output file prefix>
+~~~
+
+For Example:
+
+~~~ shell
+$ PYTHONPATH=. python3 werbench/asr/engine.py --engine wav2letter \
+  --model-path-prefix ./models/wav2letter/en-US \
+  --input-dir ./data/en-US/audio \
+  --output-path-prefix ./wav2letter-out
+~~~
+
+This will generate `./wav2letter-out.ref` and `./wav2letter-out.hyp` files.
+
+Exit the docket shell.
+
+### Generate `sclite` Report
+
+To generate `sclite` report:
+
+~~~ shell
+$ sclite -r wav2letter-out.ref trn -h wav2letter-out.hyp trn -i rm
+~~~
+
+To generate detailed `sclite` report:
+
+~~~ shell
+$ sclite -r wav2letter-out.ref trn -h wav2letter-out.hyp trn -i rm -o dtl
 ~~~
 
 ---
