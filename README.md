@@ -108,6 +108,11 @@ A sample set is provided in `./data/en-US/audio/` directory.
 
 Currently, there are limitations on the length of the audio and transcription clips.
 
+Benchmark runs only on test cases (and filter out the rest):
+
+- Audio clip shorter than 30 sec
+- Reference transcript shorter than 620 chars and with 2 or more words
+
 ---
 
 ## DeepSpeech
