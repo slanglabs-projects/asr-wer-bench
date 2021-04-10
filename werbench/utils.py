@@ -2,7 +2,15 @@
 
 import numpy as np
 from scipy import signal
+import sox
 import wave
+
+
+def wav_duration_in_ms(wav_file_path):
+    return round(
+        1000 * sox.file_info.duration(wav_file_path),
+        2
+    )
 
 
 def read_wav(audio_file_path):
@@ -11,6 +19,7 @@ def read_wav(audio_file_path):
     frames = w.getnframes()
     buffer = w.readframes(frames)
     return buffer, rate
+
 
 def bytes2int16(buffer, input_rate, desired_rate):
     data16 = np.frombuffer(buffer, dtype=np.int16)

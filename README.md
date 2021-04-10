@@ -44,7 +44,7 @@ $ echo $ASR_WER_BENCH_DIR
 Python 3.6.5 or above is required. Set Python virtual environment:
 
 ~~~ shell
-$ python -m venv ./.venv
+$ python3 -m venv ./.venv
 $ source ./.venv/bin/activate
 
 # For CPU machine
@@ -61,7 +61,10 @@ $ ls -l $ASR_WER_BENCH_DIR/data/en-US/audio
 
 ### Build KenLM Language Model
 
-Popular Language Model. Not needed for current setup of DeepSpeech and wav2letter
+Popular Language Model.
+
+NOT NEEDED in current setup for DeepSpeech and wav2letter.
+
 Build `kenlm` package from GitHub source:
 
 ~~~ shell
@@ -101,6 +104,12 @@ A sample set is provided in `./data/en-US/audio/` directory.
 
 ---
 
+## Test Data Preparation
+
+Currently, there are limitations on the length of the audio and transcription clips.
+
+---
+
 ## DeepSpeech
 
 ### Download Models
@@ -135,7 +144,7 @@ $ cat data/en-US/audio/2830-3980-0043.txt
 To run WER bench for DeepSpeech:
 
 ~~~ shell
-$ python werbench/asr/engine.py --engine deepspeech \
+$ PYTHONPATH=. python3 werbench/asr/engine.py --engine deepspeech \
   --model-path-prefix <model dir + model filename prefix> \
   --input-dir <wav txt data dir> \
   --output-path-prefix <output file prefix>
@@ -144,7 +153,7 @@ $ python werbench/asr/engine.py --engine deepspeech \
 For Example:
 
 ~~~ shell
-$ python werbench/asr/engine.py --engine deepspeech \
+$ PYTHONPATH=. python3 werbench/asr/engine.py --engine deepspeech \
   --model-path-prefix ./models/deepspeech/en-US/deepspeech-0.8.1-models \
   --input-dir ./data/en-US/audio \
   --output-path-prefix ./deepspeech-out
@@ -218,13 +227,14 @@ This will get you in a shell in the docker Set the workbench dir inside the dock
 $ export ASR_WER_BENCH_DIR=/root/asr-wer-bench
 ~~~
 
-Install the requirements (TODO: Automate in augmented docker image):
+Install the requirements:
 
 ~~~ shell
 $ cd $ASR_WER_BENCH_DIR
 $ pip3 install -r requirements.txt
 ~~~
 
+TODO: A docker image to include only py packages needed for wav2letter and sclite, so that installing the requirements.txt is not needed and sclite can be run from within the docker image.
 
 ### Run Test Bench
 

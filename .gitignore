@@ -136,5 +136,7 @@ dmypy.json
 # Do not check-in models and outputs
 models/
 wav2vec-manifest/
+*.lst
 *.ref
 *.hyp
+*.hyp.dtl

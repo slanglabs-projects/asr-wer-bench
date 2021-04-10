@@ -1,3 +1,5 @@
+# Copyright (c) 2020 Slang Labs Private Limited. All rights reserved.
+
 import os
 from subprocess import Popen, PIPE
 
