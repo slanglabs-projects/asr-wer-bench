@@ -48,6 +48,18 @@ def _make_data_set(dirname):
     return id_wav_txt_tuple
 
 
+def _make_model(asr_engine: str, model_path_prefix: str):
+    if asr_engine == 'deepspeech':
+        return MozillaDeepSpeech(
+            model_path=str(Path(model_path_prefix + '.pbmm').resolve()),
+            scorer_path=str(Path(model_path_prefix + '.scorer').resolve()),
+        )
+    elif asr_engine == 'wav2letter':
+        return Wav2Letter(model_path=model_path_prefix)
+    else:
+        raise KeyError('Unknown ASR engine: ' + asr_engine)
+
+
 def main():
     parser = argparse.ArgumentParser(description='ASR WER Bench')
     parser.add_argument(
@@ -69,13 +81,7 @@ def main():
     )
     args = parser.parse_args()
 
-    model = {
-        'deepspeech': MozillaDeepSpeech(
-            model_path=str(Path(args.model_path_prefix + '.pbmm').resolve()),
-            scorer_path=str(Path(args.model_path_prefix + '.scorer').resolve()),
-        ),
-        'wav2letter': Wav2Letter(model_path=args.model_path_prefix),
-    }[args.engine]
+    model = _make_model(args.engine, args.model_path_prefix)
 
     data_set = args.input_dir
 

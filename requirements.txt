@@ -1,12 +1,4 @@
-Cython
 deepspeech==0.8.1
-hydra-core==1.0.3
 numpy==1.18.5
-omegaconf==2.0.5
-packaging
 scipy==1.4.1
-sentencepiece==0.1.94
-soundfile
 sox==1.4.1
-torch
-torchaudio==0.7.0
