@@ -3,6 +3,7 @@
 import argparse
 import itertools
 from pathlib import Path
+import time
 
 from werbench.asr.mozillads import MozillaDeepSpeech
 from werbench.asr.wav2letter import Wav2Letter
@@ -16,11 +17,24 @@ def run_asr_engine(model, id_wav_txt):
         ref = f.readline()  # read first line
 
     print('Ref: {}'.format(ref))
+    clip_duration_sec = wav_duration_in_ms(wav_file) / 1000 # seconds
+
+    start_time = time.time()  # secs
     hyp = model.transcribe(wav_file)
+    end_time = time.time()  # secs
+    stt_time_sec = end_time - start_time
+
+    print('Perf: clip size = {} s \t STT time = {} s'.format(
+        round(clip_duration_sec, 3),
+        round(stt_time_sec, 3)
+    ))
 
     return (
-        ref.strip().upper() + ' (' + id + ')',
-        hyp.strip().upper() + ' (' + id + ')'
+        id,
+        ref.strip(),
+        hyp.strip(),
+        clip_duration_sec,
+        stt_time_sec
     )
 
 
@@ -86,19 +100,35 @@ def main():
 
     data_set = filter(model.acceptable_test_data, args.input_dir)
 
-    ref_hyp_pairs = map(lambda t: run_asr_engine(model, t), data_set)
+    ref_hyp_tuples = map(lambda t: run_asr_engine(model, t), data_set)
 
     ref_file_path = Path(args.output_path_prefix + '.ref')
     hyp_file_path = Path(args.output_path_prefix + '.hyp')
+    perf_file_path = Path(args.output_path_prefix + '.perf')
+
+    clips_size_total = 0.0
+    stt_time_total = 0.0
 
     with open(ref_file_path, mode='w', encoding='utf-8') as ref_f:
         with open(hyp_file_path, mode='w', encoding='utf-8') as hyp_f:
-            for ref, hyp in ref_hyp_pairs:
-                ref_f.write(ref)
-                ref_f.write('\n')
-                hyp_f.write(hyp)
-                hyp_f.write('\n')
+            with open(perf_file_path, mode='w', encoding='utf-8') as perf_f:
+                for id, ref, hyp, clips_size, stt_time in ref_hyp_tuples:
+                    ref_f.write(ref.upper() + ' (' + id + ')\n')
+                    hyp_f.write(hyp.upper() + ' (' + id + ')\n')
+                    perf_f.write('{}\t{}\t{}\t{}\n'.format(
+                        id,
+                        round(clips_size, 3),
+                        round(stt_time, 3),
+                        round(clips_size/stt_time, 3)
+                    ))
+                    clips_size_total += clips_size
+                    stt_time_total += stt_time
 
+    print('Total Clip Size = {} seconds'.format(round(clips_size_total, 3)))
+    print('Total STT Time = {} seconds'.format(round(stt_time_total, 3)))
+    print(' Total Clip Size / Total STT Time = {}'.format(
+        round(clips_size_total/stt_time_total, 3)
+    ))
 
 if __name__ == '__main__':
     main()
