@@ -125,5 +125,12 @@ class Wav2Letter(object):
             return ""
 
         transcription = transcription.lower()
+
+        # Since wav2letter interfaces through stdin/stdout, for about 0.3%
+        # of times, the state machine to read transcription fails. Python
+        # bindings might fix this issue.
+        if "WAITING THE INPUT IN THE FORMAT".lower() in transcription:
+            transcription = ""
+
         print("{}. hyp: {}".format(self.counter, transcription))
         return transcription
