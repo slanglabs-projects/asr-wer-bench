@@ -3,6 +3,8 @@
 import os
 from subprocess import Popen, PIPE
 
+from werbench.utils import wav_duration_in_ms
+
 
 # command to run inference on input wav file
 # NOTE: assumes that this script is being run in the context of
@@ -97,6 +99,21 @@ class Wav2Letter(object):
             raise ValueError('LM file needs to exist at {}/lm.bin'.format(prefix))
 
         print('Model path validated successfully')
+
+    @staticmethod
+    def acceptable_test_data(id_wav_txt) -> bool:
+        id, wav_file, txt_file = id_wav_txt
+
+        with open(txt_file, mode='r', encoding='utf-8') as f:
+            transcript_ref = f.readline()  # read first line
+
+        c_len = len(transcript_ref)
+        w_len = len(transcript_ref.split(' '))
+        clip_duration = wav_duration_in_ms(wav_file)
+
+        # clips must be less than 30 sec length, with 2+ words and <620 chars
+        return c_len <620 and w_len > 1 and clip_duration < 30000
+
 
     def transcribe(self, audio_file_path: str) -> str:
         self.counter = self.counter + 1

@@ -9,20 +9,6 @@ from werbench.asr.wav2letter import Wav2Letter
 from werbench.utils import wav_duration_in_ms
 
 
-def acceptable_test_data(id_wav_txt) -> bool:
-    id, wav_file, txt_file = id_wav_txt
-
-    with open(txt_file, mode='r', encoding='utf-8') as f:
-        transcript_ref = f.readline()  # read first line
-
-    c_len = len(transcript_ref)
-    w_len = len(transcript_ref.split(' '))
-    clip_duration = wav_duration_in_ms(wav_file)
-
-    # clips must be less than 30 sec length, with 2+ words and <620 chars
-    return c_len <620 and w_len > 1 and clip_duration < 30000
-
-
 def run_asr_engine(model, id_wav_txt):
     id, wav_file, txt_file = id_wav_txt
 
@@ -98,7 +84,7 @@ def main():
 
     model = _make_model(args.engine, args.model_path_prefix)
 
-    data_set = filter(acceptable_test_data, args.input_dir)
+    data_set = filter(model.acceptable_test_data, args.input_dir)
 
     ref_hyp_pairs = map(lambda t: run_asr_engine(model, t), data_set)
 
