@@ -18,3 +18,6 @@ class MozillaDeepSpeech:
         data16 = bytes2int16(buffer, sample_rate, self.model.sampleRate())
         text = self.model.stt(data16)
         return text
+
+    def transcribe_timestamps(self, transcription_summary_path: str, output_dir_path: str):
+        pass

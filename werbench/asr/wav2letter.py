@@ -1,7 +1,10 @@
 # Copyright (c) 2020 Slang Labs Private Limited. All rights reserved.
 
+from functools import reduce
+from itertools import groupby
 import os
-from subprocess import Popen, PIPE
+from pathlib import Path
+from subprocess import Popen, PIPE, run
 
 from werbench.utils import wav_duration_in_ms
 
@@ -11,7 +14,7 @@ from werbench.utils import wav_duration_in_ms
 # flashlight docker container. if not, the path to the inference
 # executable will need to be updated as necessary
 
-CMD = """/root/flashlight/build/bin/asr/fl_asr_tutorial_inference_ctc \
+ASR_CMD = """/root/flashlight/build/bin/asr/fl_asr_tutorial_inference_ctc \
         --am_path={model_path_prefix}/model.bin \
         --tokens_path={model_path_prefix}/tokens.txt \
         --lexicon_path={model_path_prefix}/lexicon.txt \
@@ -79,7 +82,8 @@ def run_inference(audio_path, process):
 class Wav2Letter(object):
     def __init__(self, model_path: str):
         self.validate(model_path)
-        self.process = create_process(CMD.format(model_path_prefix=model_path))
+        self.model_path = model_path
+        self.process = create_process(ASR_CMD.format(model_path_prefix=model_path))
         self.counter = 0
 
     def validate(self, prefix: str) -> None:
@@ -114,13 +118,12 @@ class Wav2Letter(object):
         # clips must be less than 30 sec length, with 2+ words and <620 chars
         return c_len <620 and w_len > 1 and clip_duration < 30000
 
-
     def transcribe(self, audio_file_path: str) -> str:
         self.counter = self.counter + 1
         transcription = run_inference(audio_file_path, self.process)
 
         if transcription is None:
-            self.process = create_process(CMD)
+            self.process = create_process(ASR_CMD)
             print("{}. hyp: {}".format(self.counter, ""))
             return ""
 
@@ -134,3 +137,67 @@ class Wav2Letter(object):
 
         print("{}. hyp: {}".format(self.counter, transcription))
         return transcription
+
+    def transcribe_timestamps(self, transcription_summary_path: str, output_dir_path: str):
+        Path(output_dir_path).mkdir(parents=True, exist_ok=True)
+        align_config = Path(output_dir_path, 'align.cfg')
+        with open(align_config, mode='w', encoding='utf-8') as config_f:
+            config_f.write(
+                '''# align.cfg
+--tokens={model_path_prefix}/tokens.txt
+--lexicon={model_path_prefix}/lexicon.txt
+--am={model_path_prefix}/model.bin
+--datadir=.
+--test={align_lst}'''.format(
+                    model_path_prefix=self.model_path,
+                    align_lst=transcription_summary_path
+                )
+            )
+
+        align_result = '{output_dir_path}/result.align'.format(
+            output_dir_path=output_dir_path
+        )
+
+        completed_process = run([
+            '/root/flashlight/build/bin/asr/fl_asr_align',
+            align_result,
+            '--flagsfile={align_config}'.format(align_config=align_config)
+        ])
+
+        # Create Audacity style lables from alignment
+        with open(align_result, 'r') as align_result_f:
+            for line in align_result_f:
+                (wav_fpath, segments) = line.split('\t')
+                segments = segments.split('\\n')
+                output_file = os.path.join(output_dir_path, Path(wav_fpath).stem + '-ts.txt')
+                letter_segments = [ ]
+                for segment in segments:
+                    (_, _, start, duration, letter) = segment.split(' ')
+                    start = float(start)
+                    duration = float(duration)
+                    end = start + duration
+                    letter_segments.append(
+                        (round(start, 6), round(end, 6), letter.strip())
+                    )
+
+                letter_segments = filter(
+                    lambda x: x[2] != '#',
+                    letter_segments
+                )
+
+                word_groups =  (list(g) for _, g in groupby(
+                    letter_segments, key=lambda x: (x[2] != '|')
+                ))
+
+                word_segments = [
+                    reduce(lambda x, y: (x[0], y[1], x[2]+y[2]), word)
+                    for word in filter(
+                        lambda x: len(x) != 1 or x[0][2] != '|',
+                        word_groups
+                    )
+                ]
+
+                # print(list(word_segments))
+                with open(output_file, "w") as ofile:
+                    for (start, end, word) in word_segments:
+                        ofile.write('{}\t{}\t{}\n'.format(start, end, word))

@@ -31,6 +31,8 @@ def run_asr_engine(model, id_wav_txt):
 
     return (
         id,
+        wav_file,
+        txt_file,
         ref.strip(),
         hyp.strip(),
         clip_duration_sec,
@@ -106,29 +108,42 @@ def main():
     hyp_file_path = Path(args.output_path_prefix + '.hyp')
     perf_file_path = Path(args.output_path_prefix + '.perf')
 
+    summary_file_path = Path(args.output_path_prefix + '-summary.lst')
+
     clips_size_total = 0.0
     stt_time_total = 0.0
 
     with open(ref_file_path, mode='w', encoding='utf-8') as ref_f:
         with open(hyp_file_path, mode='w', encoding='utf-8') as hyp_f:
             with open(perf_file_path, mode='w', encoding='utf-8') as perf_f:
-                for id, ref, hyp, clips_size, stt_time in ref_hyp_tuples:
-                    ref_f.write(ref.upper() + ' (' + id + ')\n')
-                    hyp_f.write(hyp.upper() + ' (' + id + ')\n')
-                    perf_f.write('{}\t{}\t{}\t{}\n'.format(
-                        id,
-                        round(clips_size, 3),
-                        round(stt_time, 3),
-                        round(clips_size/stt_time, 3)
-                    ))
-                    clips_size_total += clips_size
-                    stt_time_total += stt_time
+                with open(summary_file_path, mode='w', encoding='utf-8') as summary_f:
+                    for id, wavf, _, ref, hyp, clips_size, stt_time in ref_hyp_tuples:
+                        ref_f.write(ref.upper() + ' (' + id + ')\n')
+                        hyp_f.write(hyp.upper() + ' (' + id + ')\n')
+                        perf_f.write('{}\t{}\t{}\t{}\n'.format(
+                            id,
+                            round(clips_size, 3),
+                            round(stt_time, 3),
+                            round(clips_size/stt_time, 3)
+                        ))
+                        clips_size_total += clips_size
+                        stt_time_total += stt_time
+                        # align file for timestamps
+                        summary_f.write("{}\t{}\t{}\t{}\n".format(
+                            wavf, wavf, clips_size, hyp
+                        ))
 
     print('Total Clip Size = {} seconds'.format(round(clips_size_total, 3)))
     print('Total STT Time = {} seconds'.format(round(stt_time_total, 3)))
     print(' Total Clip Size / Total STT Time = {}'.format(
         round(clips_size_total/stt_time_total, 3)
     ))
+
+    # Timestamp Postprocessing
+    model.transcribe_timestamps(
+        transcription_summary_path=summary_file_path,
+        output_dir_path=args.output_path_prefix + '-timestamps'
+    )
 
 if __name__ == '__main__':
     main()

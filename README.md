@@ -272,7 +272,15 @@ $ PYTHONPATH=. python3 werbench/asr/engine.py --engine wav2letter \
   --output-path-prefix ./wav2letter-out
 ~~~
 
-This will generate `./wav2letter-out.ref` and `./wav2letter-out.hyp` files.
+This will generate:
+
+- Reference transcripts: `./wav2letter-out.ref`
+- Hypothesis transcripts: `./wav2letter-out.hyp`
+- Performance report: `./wav2letter-out.perf`
+- Timestamp splits for each test sample: `./wav2letter-out-timestamps/*-ts.txt`
+
+The timestamp files contain following tuples in Audacity Labels format,
+separated by tabs: `<start-timestamp end-timestamp word>`
 
 Exit the docket shell.
 
