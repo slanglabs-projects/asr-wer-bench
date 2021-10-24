@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from subprocess import Popen, PIPE, run
 
-from werbench.utils import wav_duration_in_ms
+from werbench.utils import wav_duration_in_ms, wav_sample_rate
 
 
 # command to run inference on input wav file
@@ -114,9 +114,10 @@ class Wav2Letter(object):
         c_len = len(transcript_ref)
         w_len = len(transcript_ref.split(' '))
         clip_duration = wav_duration_in_ms(wav_file)
+        sample_rate = wav_sample_rate(wav_file)
 
         # clips must be less than 30 sec length, with 2+ words and <620 chars
-        return c_len <620 and w_len > 1 and clip_duration < 30000
+        return sample_rate == 16000 and c_len <620 and w_len > 1 and clip_duration < 30000
 
     def transcribe(self, audio_file_path: str) -> str:
         self.counter = self.counter + 1
